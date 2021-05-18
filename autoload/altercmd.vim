@@ -84,11 +84,33 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
 
     return
   endif
+  let pat_preceding = '\%(^\<bar><bar>\)\s*'
+
+  let pat_mark = '''[a-zA-Z0-9<>\[\]<>''`"^.(){}]'
+  let pat_match = '\([/?]\)[^\1]\{-}\%(\\\@<!\1\)\='
+  let pat_previous = '\\[/?&]'
+  let pat_address = '[.$]'
+  \ . '\<bar>\%([-+]\=[0-9]\+\)'
+  \ . '\<bar>\%(' . pat_mark     . '\)'
+  \ . '\<bar>\%(' . pat_match    . '\)'
+  \ . '\<bar>\%(' . pat_previous . '\)'
+  let pat_address = '\%(' . pat_address . '\)'
+  \ . '\s*\%([,;]\='
+  \ . '\s*\%(' . pat_address .'\)\)\='
+  let s:pat_range = '\%(\*\<bar>%\)'
+  \ . '\<bar>\%(' . pat_address . '\)'
 
   for mode in split(modes, '\zs')
     for lhs in lhs_list
       if mode ==# 'c'
-        let cond = '(getcmdtype() == ":" && getcmdline() ==# ' . string(lhs)  . ')'
+        if get(options, 'range', 0)
+          let pat = pat_preceding . '\%(' . s:pat_range . '\)\=\s*' . lhs . '\s*$'
+          let cond = 'getcmdtype() == ":"'
+          \ . ' && getcmdline()[: getcmdpos() - 1] =~# ' . string(pat)
+        else
+          let pat = '^\s*' . lhs . '\s*$'
+          let cond = 'getcmdtype() == ":" && getcmdline() =~# ' . string(pat)
+        endif
       else
         let cond = '(getline(".") ==# ' . string(lhs) . ')'
       endif
@@ -138,6 +160,10 @@ function! s:parse_options(args) "{{{2
 
     if o ==? '<buffer>'
       let opt.buffer = 1
+    endif
+
+    if o ==? '<range>'
+      let opt.range = 1
     endif
 
     " <cmdwin>   : normal Ex command
