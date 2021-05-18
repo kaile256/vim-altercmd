@@ -85,6 +85,10 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
     return
   endif
 
+  if get(options, 'expr', 0)
+    let alternate_name = '<C-r>=' . alternate_name . '<CR>'
+  endif
+
   for mode in split(modes, '\zs')
     for lhs in lhs_list
       if mode ==# 'c'
@@ -135,6 +139,10 @@ function! s:parse_options(args) "{{{2
       break
     endif
     let args = strpart(args, strlen(o))
+
+    if o ==? '<expr>'
+      let opt.expr = 1
+    endif
 
     if o ==? '<buffer>'
       let opt.buffer = 1
