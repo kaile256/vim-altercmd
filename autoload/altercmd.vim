@@ -84,21 +84,22 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
 
     return
   endif
-  let pat_preceding = '\%(^\<bar><bar>\)\s*'
+
+  let pat_preceding = '\%(^\||\)\s*'
 
   let pat_mark = '''[a-zA-Z0-9<>\[\]<>''`"^.(){}]'
   let pat_match = '\([/?]\)[^\1]\{-}\%(\\\@<!\1\)\='
   let pat_previous = '\\[/?&]'
   let pat_address = '[.$]'
-  \ . '\<bar>\%([-+]\=[0-9]\+\)'
-  \ . '\<bar>\%(' . pat_mark     . '\)'
-  \ . '\<bar>\%(' . pat_match    . '\)'
-  \ . '\<bar>\%(' . pat_previous . '\)'
+  \ . '\|\%([-+]\=[0-9]\+\)'
+  \ . '\|\%(' . pat_mark     . '\)'
+  \ . '\|\%(' . pat_match    . '\)'
+  \ . '\|\%(' . pat_previous . '\)'
   let pat_address = '\%(' . pat_address . '\)'
   \ . '\s*\%([,;]\='
   \ . '\s*\%(' . pat_address .'\)\)\='
-  let s:pat_range = '\%(\*\<bar>%\)'
-  \ . '\<bar>\%(' . pat_address . '\)'
+  let s:pat_range = '\%(\*\|%\)'
+  \ . '\|\%(' . pat_address . '\)'
 
   for mode in split(modes, '\zs')
     for lhs in lhs_list
@@ -117,8 +118,8 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
       execute
       \ mode . 'noreabbrev <expr>' . (get(options, 'buffer', 0) ? '<buffer>' : '')
       \ lhs
-      \ cond
-      \ '?' string(alternate_name)
+      \ substitute(cond, '|', '<bar>', 'g')
+      \ '?' substitute(string(alternate_name), '|', '<bar>', 'g')
       \ ':' string(lhs)
     endfor
   endfor
