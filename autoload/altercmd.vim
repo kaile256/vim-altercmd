@@ -100,8 +100,10 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
   let pat_address = '\%(' . pat_address . '\)'
   \ . '\s*\%([,;]\='
   \ . '\s*\%(' . pat_address .'\)\)\='
-  let s:pat_range = '\%(\*\|%\)'
+  let pat_range = '\%(\*\|%\)'
   \ . '\|\%(' . pat_address . '\)'
+  " Truncate extra spaces for user to control format in ':AlterCommand'.
+  let s:pat_range = '\s*\zs' . pat_range . '\ze\s*'
 
   for mode in split(modes, '\zs')
     for lhs in lhs_list
