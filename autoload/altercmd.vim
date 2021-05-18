@@ -110,6 +110,8 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
           let pat = pat_preceding . '\%(' . s:pat_range . '\)\=\s*' . lhs . '\s*$'
           let cond = 'getcmdtype() == ":"'
           \ . ' && getcmdline()[: getcmdpos() - 1] =~# ' . string(pat)
+          let alternate_name = '<C-\>e<SID>expand_with_range('
+          \ . string(alternate_name) . ')<CR>'
         else
           let pat = '^\s*' . lhs . '\s*$'
           let cond = 'getcmdtype() == ":" && getcmdline() =~# ' . string(pat)
@@ -243,6 +245,21 @@ endfunction
 
 
 
+function! s:expand_with_range(alternate) abort
+  let cmdline = getcmdline()
+  let cmdpos = getcmdpos()
+  let preceding = cmdline[: cmdpos - 1]
+  let [range, start, end] = matchstrpos(preceding, s:pat_range)
+  let new_alternate = substitute(a:alternate, '<range>', range, 'g')
+  if range ==# ''
+    let following = cmdline[cmdpos :]
+  else
+    let preceding = start == 0 ? '' : cmdline[: start - 1]
+    let following = cmdline[end + 1 :]
+  endif
+  let new_cmdline = preceding . new_alternate . following
+  return new_cmdline
+endfunction
 
 
 
