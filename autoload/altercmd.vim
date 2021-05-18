@@ -89,18 +89,47 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
     let alternate_name = '<C-r>=' . alternate_name . '<CR>'
   endif
 
+  " TODO: Enable resonable expansion following `|`.
+  " let pat_preceding = '\%(^\||\)\s*'
+  let pat_preceding = '\%^\s*'
+
+  let pat_mark = '''[a-zA-Z0-9<>\[\]<>''`"^.(){}]'
+  let pat_match = '\([/?]\)[^\1]\{-}\%(\\\@<!\1\)\='
+  let pat_previous = '\\[/?&]'
+  let pat_address = '[.$]'
+  \ . '\|\%([-+]\=[0-9]\+\)'
+  \ . '\|\%(' . pat_mark     . '\)'
+  \ . '\|\%(' . pat_match    . '\)'
+  \ . '\|\%(' . pat_previous . '\)'
+  let pat_address = '\%(' . pat_address . '\)'
+  \ . '\s*\%([,;]\='
+  \ . '\s*\%(' . pat_address .'\)\)\='
+  let pat_range = '\%(\*\|%\)'
+  \ . '\|\%(' . pat_address . '\)'
+  " Truncate extra spaces for user to control format in ':AlterCommand'.
+  let s:pat_range = '\s*\zs' . pat_range . '\ze\s*'
+
   for mode in split(modes, '\zs')
     for lhs in lhs_list
       if mode ==# 'c'
-        let cond = '(getcmdtype() == ":" && getcmdline() ==# ' . string(lhs)  . ')'
+        if get(options, 'range', 0)
+          let pat = pat_preceding . '\%(' . s:pat_range . '\)\=\s*' . lhs . '\s*$'
+          let cond = 'getcmdtype() == ":"'
+          \ . ' && getcmdline()[: getcmdpos() - 1] =~# ' . string(pat)
+          let alternate_name = '<C-\>e<SID>expand_with_range('
+          \ . string(alternate_name) . ')<CR>'
+        else
+          let pat = '^\s*' . lhs . '\s*$'
+          let cond = 'getcmdtype() == ":" && getcmdline() =~# ' . string(pat)
+        endif
       else
         let cond = '(getline(".") ==# ' . string(lhs) . ')'
       endif
       execute
       \ mode . 'noreabbrev <expr>' . (get(options, 'buffer', 0) ? '<buffer>' : '')
       \ lhs
-      \ cond
-      \ '?' string(alternate_name)
+      \ substitute(cond, '|', '<bar>', 'g')
+      \ '?' substitute(string(alternate_name), '|', '<bar>', 'g')
       \ ':' string(lhs)
     endfor
   endfor
@@ -146,6 +175,10 @@ function! s:parse_options(args) "{{{2
 
     if o ==? '<buffer>'
       let opt.buffer = 1
+    endif
+
+    if o ==? '<range>'
+      let opt.range = 1
     endif
 
     " <cmdwin>   : normal Ex command
@@ -222,6 +255,21 @@ endfunction
 
 
 
+function! s:expand_with_range(alternate) abort
+  let cmdline = getcmdline()
+  let cmdpos = getcmdpos()
+  let preceding = cmdline[: cmdpos - 1]
+  let [range, start, end] = matchstrpos(preceding, s:pat_range)
+  let new_alternate = substitute(a:alternate, '<range>', range, 'g')
+  if range ==# ''
+    let following = cmdline[cmdpos :]
+  else
+    let preceding = start == 0 ? '' : cmdline[: start - 1]
+    let following = cmdline[end + 1 :]
+  endif
+  let new_cmdline = preceding . new_alternate . following
+  return new_cmdline
+endfunction
 
 
 
