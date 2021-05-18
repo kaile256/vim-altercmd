@@ -85,7 +85,9 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
     return
   endif
 
-  let pat_preceding = '\%(^\||\)\s*'
+  " TODO: Enable resonable expansion following `|`.
+  " let pat_preceding = '\%(^\||\)\s*'
+  let pat_preceding = '\%^\s*'
 
   let pat_mark = '''[a-zA-Z0-9<>\[\]<>''`"^.(){}]'
   let pat_match = '\([/?]\)[^\1]\{-}\%(\\\@<!\1\)\='
