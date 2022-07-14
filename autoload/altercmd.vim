@@ -89,6 +89,10 @@ function! s:do_define(options, lhs_list, alternate_name, modes) "{{{2
     let alternate_name = '<C-r>=' . alternate_name . '<CR>'
   endif
 
+  " augroup altercmd-truncate_trailing_whitespace
+  "   au CmdlineChanged : ++once call s:truncate_trailing_whitespace()
+  " augroup END
+
   " TODO: Enable resonable expansion following `|`.
   " let pat_preceding = '\%(^\||\)\s*'
   let pat_preceding = '\%^\s*'
@@ -273,6 +277,10 @@ endfunction
 
 
 
+
+function! s:truncate_trailing_whitespace() abort
+
+endfunction
 
 " __END__  "{{{1
 " vim: foldmethod=marker
